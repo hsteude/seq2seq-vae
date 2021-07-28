@@ -7,14 +7,15 @@ pl.seed_everything(1234)
 
 
 class VAE(pl.LightningModule):
-    def __init__(self, enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100):
+    def __init__(self, enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100, *args, **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
 
         # encoder, decoder
         self.encoder = Encoder(input_size=input_size, hidden_size=enc_out_dim)
-        self.decoder = Decoder(input_size=latent_dim, output_size=input_size, seq_len=seq_len)
+        self.decoder = Decoder(input_size=latent_dim,
+                               output_size=input_size, seq_len=seq_len)
 
         # distribution parameters
         self.fc_mu = nn.Linear(enc_out_dim, latent_dim)
@@ -99,16 +100,23 @@ class VAE(pl.LightningModule):
         return val_elbo
 
 
-
 def train():
-    parser = ArgumentParser()
-    parser.add_argument('--gpus', type=int, default=None)
-    parser.add_argument('--dataset', type=str, default='cifar10')
-    args = parser.parse_args()
+    # parser = ArgumentParser()
+    # parser.add_argument('--gpus', type=int, default=None)
+    # parser.add_argument('--dataset', type=str, default='cifar10')
+    # args = parser.parse_args()
+    breakpoint()
+    from vae_ts_test.data_module import RandomCurveDataModule
 
-    vae = VAE()
-    trainer = pl.Trainer(gpus=args.gpus, max_epochs=20)
-    trainer.fit(vae, dataset)
+    hparams = dict(enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100,
+                   validdation_split=.1,
+                   batch_size=10,
+                   dl_num_workers=6
+                   )
+    vae = VAE(**hparams)
+    trainer = pl.Trainer(gpus=0, max_epochs=20)
+    dm = RandomCurveDataModule(**hparams)
+    trainer.fit(vae, dm)
 
 
 if __name__ == '__main__':

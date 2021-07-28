@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 
-class Encoder():
+class Encoder(nn.Module):
     """Please implement me"""
     def __init__(self, input_size: int = 1,
                  hidden_size: int = 4,
