@@ -34,7 +34,7 @@ class VAE(pl.LightningModule):
 
         # measure prob of seeing x under p(x|z)
         log_pxz = dist.log_prob(x)
-        return log_pxz.sum(dim=(1, 2, 3))
+        return log_pxz.sum(dim=(1, 2))
 
     def kl_divergence(self, z, mu, std):
         # --------------------------
@@ -105,7 +105,6 @@ def train():
     # parser.add_argument('--gpus', type=int, default=None)
     # parser.add_argument('--dataset', type=str, default='cifar10')
     # args = parser.parse_args()
-    breakpoint()
     from vae_ts_test.data_module import RandomCurveDataModule
 
     hparams = dict(enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100,
@@ -114,7 +113,7 @@ def train():
                    dl_num_workers=6
                    )
     vae = VAE(**hparams)
-    trainer = pl.Trainer(gpus=0, max_epochs=20)
+    trainer = pl.Trainer(gpus=0, max_epochs=200)
     dm = RandomCurveDataModule(**hparams)
     trainer.fit(vae, dm)
 

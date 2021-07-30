@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import torch
 from torch.utils.data import Dataset
 
 import constants as const
@@ -12,6 +11,7 @@ class SimpleRandomCurvesDataset(Dataset):
     def __init__(self, csv_file):
         df = pd.read_csv(csv_file)
         self.df_scaled = self.scale_ts(df)
+        self.input_dim = 1
 
     @staticmethod
     def scale_single_ts(ts, mean, std):
@@ -19,8 +19,11 @@ class SimpleRandomCurvesDataset(Dataset):
 
     def scale_ts(self, df):
         df_scaled = pd.DataFrame(
-            np.array([self.scale_single_ts(df.iloc[i, :], df.iloc[:, -1].mean(), df.iloc[:, -1].std())
-                      for i in range(len(df))]))
+            np.array([self.scale_single_ts(
+                df.iloc[i, :],
+                df.iloc[:, -1].mean(),
+                df.iloc[:, -1].std())
+                for i in range(len(df))]))
         return df_scaled
 
     def __len__(self):
@@ -30,7 +33,9 @@ class SimpleRandomCurvesDataset(Dataset):
 
     def __getitem__(self, index):
         """Get one sample (including questions and answers)"""
-        return self.df_scaled.iloc[index, :].values
+        out = self.df_scaled.iloc[index, :]\
+            .values.reshape(-1, 1).astype(np.float32)
+        return out
 
 
 if __name__ == '__main__':
