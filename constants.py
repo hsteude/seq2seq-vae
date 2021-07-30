@@ -1,6 +1,6 @@
 DATA_PATH = './data/simple_random_curves.csv'
 TIMESTEPS = 100
-SAMPLES = 100
+SAMPLES = 10000
 SLOPE_MU = 0
 SLOPE_SIG = .1
 INTERSEPT_MU = 0

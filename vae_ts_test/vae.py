@@ -7,7 +7,9 @@ pl.seed_everything(1234)
 
 
 class VAE(pl.LightningModule):
-    def __init__(self, enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100, *args, **kwargs):
+    def __init__(self, enc_out_dim=4,
+                 latent_dim=4, input_size=1,
+                 seq_len=100, *args, **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
@@ -89,14 +91,22 @@ class VAE(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x = batch
         train_elbo, train_log_dict = self._shared_eval(x)
-        self.logger.experiment.add_scalars("losses", train_log_dict)
+        self.logger.experiment.add_scalars("loss", dict(
+            elbo_train=train_log_dict['elbo'],
+            kl_train=train_log_dict['kl'],
+            recon_loss_train=train_log_dict['recon_loss']
+        ))
         return train_elbo
 
     def validation_step(self, batch, batch_idx):
         x = batch
         self._shared_eval(x)
         val_elbo, val_log_dict = self._shared_eval(x)
-        self.logger.experiment.add_scalars("losses", val_log_dict)
+        self.logger.experiment.add_scalars("loss", dict(
+            elbo_val=val_log_dict['elbo'],
+            kl_val=val_log_dict['kl'],
+            recon_loss_val=val_log_dict['recon_loss']
+        ))
         return val_elbo
 
 
@@ -113,7 +123,7 @@ def train():
                    dl_num_workers=6
                    )
     vae = VAE(**hparams)
-    trainer = pl.Trainer(gpus=0, max_epochs=200)
+    trainer = pl.Trainer(gpus=0, max_epochs=2000)
     dm = RandomCurveDataModule(**hparams)
     trainer.fit(vae, dm)
 
