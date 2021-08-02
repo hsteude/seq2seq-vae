@@ -20,7 +20,8 @@ class RandomCurveDataModule(pl.LightningDataModule):
         # make assignments here (val/train/test split)
         # called on every process in DDP
         # data set and loader related
-        dataset_full = SimpleRandomCurvesDataset(csv_file=const.DATA_PATH)
+        dataset_full = SimpleRandomCurvesDataset(data_path=const.DATA_PATH,
+                                                 hidden_states_path=const.HIDDEN_STATE_PATH)
         dataset_size = len(dataset_full)
         len_val = int(np.floor(dataset_size * self.validdation_split))
         len_train = dataset_size - len_val
@@ -48,7 +49,6 @@ if __name__ == '__main__':
         batch_size=10,
         dl_num_workers=6
     )
-    breakpoint()
     rcdm = RandomCurveDataModule(**hparams)
     rcdm.setup()
     dl = rcdm.train_dataloader()

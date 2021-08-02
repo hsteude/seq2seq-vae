@@ -9,18 +9,19 @@ pl.seed_everything(1234)
 class VAE(pl.LightningModule):
     def __init__(self, enc_out_dim=4, learning_rate=1e-3,
                  latent_dim=4, input_size=2,
+                 rnn_layers=5,
                  seq_len=100, beta=10, *args, **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
 
         # encoder, decoder
-        # self.encoder = RNNEncoder(input_size=input_size, hidden_size=enc_out_dim)
-        # self.decoder = RNNDecoder(input_size=latent_dim,
-                               # output_size=input_size, seq_len=seq_len)
+        self.encoder = RNNEncoder(input_size=input_size, hidden_size=enc_out_dim, num_layers=rnn_layers)
+        self.decoder = RNNDecoder(input_size=latent_dim, num_layers=rnn_layers,
+                               output_size=input_size, seq_len=seq_len)
 
-        self.encoder = LinearEncoder(**const.HPARAMS)
-        self.decoder = LinearDecoder(**const.HPARAMS)
+        # self.encoder = LinearEncoder(**const.HPARAMS)
+        # self.decoder = LinearDecoder(**const.HPARAMS)
 
         # distribution parameters
         self.fc_mu = nn.Linear(enc_out_dim, latent_dim)
@@ -142,7 +143,6 @@ def train():
     from vae_ts_test.data_module import RandomCurveDataModule
     import constants as const
 
-    
     vae = VAE(**const.HPARAMS)
     trainer = pl.Trainer(gpus=1, max_epochs=None, log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     dm = RandomCurveDataModule(**const.HPARAMS)

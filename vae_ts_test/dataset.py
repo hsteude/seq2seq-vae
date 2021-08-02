@@ -8,39 +8,28 @@ import constants as const
 class SimpleRandomCurvesDataset(Dataset):
     """Write me!"""
 
-    def __init__(self, csv_file):
-        df = pd.read_csv(csv_file)
-        self.df_scaled = self.scale_ts(df)
+    def __init__(self, data_path, hidden_states_path):
+        self.df_data = pd.read_csv(data_path)
+        self.df_hidden_states = pd.read_csv(hidden_states_path)
         self.input_dim = 1
-
-    @staticmethod
-    def scale_single_ts(ts, mean, std):
-        return (ts - mean) / std
-
-    def scale_ts(self, df):
-        df_scaled = pd.DataFrame(
-            np.array([self.scale_single_ts(
-                df.iloc[i, :],
-                df.iloc[:, -1].mean(),
-                df.iloc[:, -1].std())
-                for i in range(len(df))]))
-        return df_scaled
 
     def __len__(self):
         """Size of dataset
         """
-        return len(self.df_scaled)
+        return len(self.df_hidden_states)
 
     def __getitem__(self, index):
         """Get one sample (including questions and answers)"""
-        out = self.df_scaled.iloc[index, :]\
+        out = self.df_data[self.df_data.sample_idx == index][['signal_1', 'signal_2']]\
             .values.astype(np.float32)
-        return out
+        return out, index
 
 
 if __name__ == '__main__':
     # test for lets have a look
-    dataset = SimpleRandomCurvesDataset(csv_file=const.DATA_PATH)
+    dataset = SimpleRandomCurvesDataset(data_path=const.DATA_PATH,
+                                        hidden_states_path=const.HIDDEN_STATE_PATH)
     idx = 10
     ts = dataset[idx]
+    breakpoint()
     print(type(ts))
