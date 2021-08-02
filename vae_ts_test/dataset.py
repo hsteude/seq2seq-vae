@@ -34,7 +34,7 @@ class SimpleRandomCurvesDataset(Dataset):
     def __getitem__(self, index):
         """Get one sample (including questions and answers)"""
         out = self.df_scaled.iloc[index, :]\
-            .values.reshape(-1, 1).astype(np.float32)
+            .values.astype(np.float32)
         return out
 
 

@@ -1,42 +1,51 @@
-from vae_ts_test.models import Encoder, Decoder
-from argparse import ArgumentParser
+from vae_ts_test.models import RNNEncoder, RNNDecoder, LinearDecoder, LinearEncoder
 import torch
 from torch import nn
 import pytorch_lightning as pl
+import constants as const
 pl.seed_everything(1234)
 
 
 class VAE(pl.LightningModule):
-    def __init__(self, enc_out_dim=4,
+    def __init__(self, enc_out_dim=4, learning_rate=1e-3,
                  latent_dim=4, input_size=1,
-                 seq_len=100, *args, **kwargs):
+                 seq_len=100, beta=10, *args, **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
 
         # encoder, decoder
-        self.encoder = Encoder(input_size=input_size, hidden_size=enc_out_dim)
-        self.decoder = Decoder(input_size=latent_dim,
-                               output_size=input_size, seq_len=seq_len)
+        # self.encoder = RNNEncoder(input_size=input_size, hidden_size=enc_out_dim)
+        # self.decoder = RNNDecoder(input_size=latent_dim,
+                               # output_size=input_size, seq_len=seq_len)
+
+        self.encoder = LinearEncoder(**const.HPARAMS)
+        self.decoder = LinearDecoder(**const.HPARAMS)
 
         # distribution parameters
         self.fc_mu = nn.Linear(enc_out_dim, latent_dim)
         self.fc_var = nn.Linear(enc_out_dim, latent_dim)
 
         # for the gaussian likelihood
-        self.log_scale = nn.Parameter(torch.Tensor([0.0]))
+        self.log_scale_diag = nn.Parameter(torch.zeros(seq_len))
+
+        # for beta term of beta-variational autoencoder
+        self.beta = beta
+        self.learning_rate = learning_rate
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-4)
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-    def gaussian_likelihood(self, x_hat, logscale, x):
-        scale = torch.exp(logscale)
+    def gaussian_likelihood(self, x_hat, logscale_diag, x):
+        scale_diag = torch.exp(logscale_diag)
+        scale = torch.diag(scale_diag)
         mean = x_hat
-        dist = torch.distributions.Normal(mean, scale)
+        dist = torch.distributions.MultivariateNormal(mean, scale_tril=scale)
 
         # measure prob of seeing x under p(x|z)
         log_pxz = dist.log_prob(x)
-        return log_pxz.sum(dim=(1, 2))
+        # return log_pxz.sum(dim=(1, 2))
+        return log_pxz
 
     def kl_divergence(self, z, mu, std):
         # --------------------------
@@ -56,6 +65,21 @@ class VAE(pl.LightningModule):
         kl = kl.sum(-1)
         return kl
 
+    def forward(self, x):
+        x_encoded = self.encoder(x)
+        mu, log_var = self.fc_mu(x_encoded), self.fc_var(x_encoded)
+
+        # sample z from q
+        std = torch.exp(log_var / 2)
+        q = torch.distributions.Normal(mu, std)
+        z = q.rsample()
+
+        # decoded
+        x_hat = self.decoder(z)
+
+        return mu, std, z, x_hat, self.log_scale_diag
+
+
     def _shared_eval(self, x):
 
         # encode x to get the mu and variance parameters
@@ -71,13 +95,13 @@ class VAE(pl.LightningModule):
         x_hat = self.decoder(z)
 
         # reconstruction loss
-        recon_loss = self.gaussian_likelihood(x_hat, self.log_scale, x)
+        recon_loss = self.gaussian_likelihood(x_hat, self.log_scale_diag, x)
 
         # kl
         kl = self.kl_divergence(z, mu, std)
 
         # elbo
-        elbo = (kl - recon_loss)
+        elbo = (self.beta * kl - recon_loss)
         elbo = elbo.mean()
 
         log_dict = dict({
@@ -116,15 +140,12 @@ def train():
     # parser.add_argument('--dataset', type=str, default='cifar10')
     # args = parser.parse_args()
     from vae_ts_test.data_module import RandomCurveDataModule
+    import constants as const
 
-    hparams = dict(enc_out_dim=4, latent_dim=4, input_size=1, seq_len=100,
-                   validdation_split=.1,
-                   batch_size=10,
-                   dl_num_workers=6
-                   )
-    vae = VAE(**hparams)
-    trainer = pl.Trainer(gpus=0, max_epochs=2000)
-    dm = RandomCurveDataModule(**hparams)
+    
+    vae = VAE(**const.HPARAMS)
+    trainer = pl.Trainer(gpus=1, max_epochs=None, log_every_n_steps=const.HPARAMS['log_every_n_steps'])
+    dm = RandomCurveDataModule(**const.HPARAMS)
     trainer.fit(vae, dm)
 
 

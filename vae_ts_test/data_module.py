@@ -32,13 +32,13 @@ class RandomCurveDataModule(pl.LightningDataModule):
         return DataLoader(self.dataset_train,
                           batch_size=self.batch_size,
                           num_workers=self.dl_num_workers,
-                          pin_memory=True)
+                          pin_memory=False)
 
     def val_dataloader(self):
         return DataLoader(self.dataset_val,
                           batch_size=self.batch_size,
                           num_workers=self.dl_num_workers,
-                          pin_memory=True)
+                          pin_memory=False)
 
 
 if __name__ == '__main__':
