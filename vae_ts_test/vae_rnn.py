@@ -135,16 +135,25 @@ class VAE(pl.LightningModule):
         return val_elbo
 
 
+
 def train():
     # parser = ArgumentParser()
     # parser.add_argument('--gpus', type=int, default=None)
     # parser.add_argument('--dataset', type=str, default='cifar10')
     # args = parser.parse_args()
     from vae_ts_test.data_module import RandomCurveDataModule
+    from vae_ts_test.callbacks import PlottingCallBack
     import constants as const
+    # resume
+    # LAST_CKP = 'lightning_logs/version_8/checkpoints/epoch=999-step=8999.ckpt'
+    # trainer = pl.Trainer(resume_from_checkpoint=LAST_CKP, max_epochs=10000)
+    # vae = VAE.load_from_checkpoint(LAST_CKP, **const.HPARAMS)
 
+    # start new
+    pl.seed_everything(123)
+    trainer = pl.Trainer(callbacks=[PlottingCallBack()], gpus=1, max_epochs=None,
+                         log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     vae = VAE(**const.HPARAMS)
-    trainer = pl.Trainer(gpus=1, max_epochs=None, log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     dm = RandomCurveDataModule(**const.HPARAMS)
     trainer.fit(vae, dm)
 
