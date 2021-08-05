@@ -7,7 +7,6 @@ setup(
         'sklearn',
         'pandas',
         'numpy',
-        'loguru',
         'torch',
         'pytorch_lightning',
         'matplotlib',
