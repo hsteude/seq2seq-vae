@@ -12,6 +12,7 @@ PHI_MIN = 0
 
 
 HPARAMS = dict(enc_out_dim=100,
+               hidden_size=100,
                rnn_layers=3,
                latent_dim=4,
                input_size=2,
@@ -19,6 +20,7 @@ HPARAMS = dict(enc_out_dim=100,
                validdation_split=.1,
                batch_size=1000,
                dl_num_workers=20,
-               beta=.5,
+               beta=.1,
                learning_rate=1e-3,
-               log_every_n_steps=10)
+               log_every_n_steps=10,
+               rnn=True)

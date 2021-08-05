@@ -1,4 +1,4 @@
-from vae_ts_test.models import RNNEncoder, RNNDecoder, LinearDecoder, LinearEncoder
+from vae_ts_test.models import LinearDecoder, LinearEncoder, RNNDecoder, RNNEncoder
 import torch
 from torch import nn
 import pytorch_lightning as pl
@@ -9,18 +9,21 @@ pl.seed_everything(1234)
 class VAE(pl.LightningModule):
     def __init__(self, enc_out_dim=4, learning_rate=1e-3,
                  latent_dim=4, input_size=2,
+                 rnn_layers=5,
+                 rnn=True,
                  seq_len=100, beta=10, *args, **kwargs):
         super().__init__()
 
         self.save_hyperparameters()
 
         # encoder, decoder
-        # self.encoder = RNNEncoder(input_size=input_size, hidden_size=enc_out_dim)
-        # self.decoder = RNNDecoder(input_size=latent_dim,
-                               # output_size=input_size, seq_len=seq_len)
+        if rnn:
+            self.encoder = RNNEncoder(**const.HPARAMS)
+            self.decoder = RNNDecoder(**const.HPARAMS)
+        else:
+            self.encoder = LinearEncoder(**const.HPARAMS)
+            self.decoder = LinearDecoder(**const.HPARAMS)
 
-        self.encoder = LinearEncoder(**const.HPARAMS)
-        self.decoder = LinearDecoder(**const.HPARAMS)
 
         # distribution parameters
         self.fc_mu = nn.Linear(enc_out_dim, latent_dim)
@@ -39,12 +42,11 @@ class VAE(pl.LightningModule):
     def gaussian_likelihood(self, x_hat, logscale_diag, x):
         scale_diag = torch.exp(logscale_diag)
         scale = torch.diag(scale_diag)
-        mu_x = x_hat.reshape(x_hat.shape[0], -1)
+        mu_x = x_hat.reshape(self.hparams.batch_size, -1)
         dist = torch.distributions.MultivariateNormal(mu_x, scale_tril=scale)
 
         # measure prob of seeing x under p(x|z)
-        log_pxz = dist.log_prob(x.reshape(x.shape[0], -1))
-        # return log_pxz.sum(dim=(1, 2))
+        log_pxz = dist.log_prob(x.reshape(self.hparams.batch_size, -1))
         return log_pxz
 
     def kl_divergence(self, z, mu, std):
@@ -134,17 +136,24 @@ class VAE(pl.LightningModule):
         return val_elbo
 
 
+
 def train():
     # parser = ArgumentParser()
     # parser.add_argument('--gpus', type=int, default=None)
     # parser.add_argument('--dataset', type=str, default='cifar10')
     # args = parser.parse_args()
     from vae_ts_test.data_module import RandomCurveDataModule
+    from vae_ts_test.callbacks import PlottingCallBack
     import constants as const
+    # resume
+    # LAST_CKP = 'lightning_logs/version_8/checkpoints/epoch=999-step=8999.ckpt'
+    # trainer = pl.Trainer(resume_from_checkpoint=LAST_CKP, max_epochs=10000)
+    # vae = VAE.load_from_checkpoint(LAST_CKP, **const.HPARAMS)
 
-    
+    # start new
+    trainer = pl.Trainer(callbacks=[PlottingCallBack()], gpus=1, max_epochs=100_000,
+                         log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     vae = VAE(**const.HPARAMS)
-    trainer = pl.Trainer(gpus=1, max_epochs=None, log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     dm = RandomCurveDataModule(**const.HPARAMS)
     trainer.fit(vae, dm)
 
