@@ -120,7 +120,9 @@ class VAE(pl.LightningModule):
         self.logger.experiment.add_scalars("loss", dict(
             elbo_train=train_log_dict['elbo'],
             kl_train=train_log_dict['kl'],
-            recon_loss_train=train_log_dict['recon_loss']
+            recon_loss_train=train_log_dict['recon_loss'],
+            beta=self.beta
+
         ))
         return train_elbo
 
@@ -143,7 +145,7 @@ def train():
     # parser.add_argument('--dataset', type=str, default='cifar10')
     # args = parser.parse_args()
     from vae_ts_test.data_module import RandomCurveDataModule
-    from vae_ts_test.callbacks import PlottingCallBack
+    from vae_ts_test.callbacks import PlottingCallBack, BetaIncreaseCallBack
     import constants as const
     # resume
     # LAST_CKP = 'lightning_logs/version_8/checkpoints/epoch=999-step=8999.ckpt'
@@ -151,7 +153,8 @@ def train():
     # vae = VAE.load_from_checkpoint(LAST_CKP, **const.HPARAMS)
 
     # start new
-    trainer = pl.Trainer(callbacks=[PlottingCallBack()], gpus=1, max_epochs=100_000,
+    trainer = pl.Trainer(callbacks=[PlottingCallBack(), BetaIncreaseCallBack()],
+                         gpus=1, max_epochs=100_000,
                          log_every_n_steps=const.HPARAMS['log_every_n_steps'])
     vae = VAE(**const.HPARAMS)
     dm = RandomCurveDataModule(**const.HPARAMS)

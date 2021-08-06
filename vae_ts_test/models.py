@@ -50,12 +50,14 @@ class LinearEncoder(nn.Module):
         self.fc1 = nn.Linear(seq_len*input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, enc_out_dim)
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
         x_in = x.reshape(x.shape[0], -1)
-        out = self.fc1(x_in)
-        out = self.fc2(out)
-        out = self.fc3(out)
+        out = self.relu(self.fc1(x_in))
+        out = self.relu(self.fc2(out))
+        out = self.tanh(self.fc3(out))
         return out
 
 class LinearDecoder(nn.Module):
@@ -67,11 +69,13 @@ class LinearDecoder(nn.Module):
         self.fc1 = nn.Linear(latent_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc3 = nn.Linear(hidden_size, seq_len*input_size)
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
 
     def forward(self, x):
-        out = self.fc1(x)
-        out = self.fc2(out)
-        out = self.fc3(out)
+        out = self.relu(self.fc1(x))
+        out = self.relu(self.fc2(out))
+        out = self.tanh(self.fc3(out))
         return out.reshape(-1, self.seq_len, self.input_size)
 
 

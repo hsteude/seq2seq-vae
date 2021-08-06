@@ -11,16 +11,16 @@ PHI_MIN = 0
 
 
 
-HPARAMS = dict(enc_out_dim=100,
+HPARAMS = dict(enc_out_dim=100, # needs to be the same as hidden_size
                hidden_size=100,
                rnn_layers=3,
-               latent_dim=4,
+               latent_dim=3,
                input_size=2,
                seq_len=TIMESTEPS,
                validdation_split=.1,
                batch_size=1000,
                dl_num_workers=20,
-               beta=.1,
-               learning_rate=1e-3,
+               beta=0.01, # initial value, will be changed through callback during training
+               learning_rate=1e-2,
                log_every_n_steps=10,
                rnn=True)

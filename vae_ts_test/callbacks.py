@@ -8,11 +8,26 @@ import plotly.graph_objects as go
 import os
 import torch
 import numpy as np
+from loguru import logger
 
+
+class BetaIncreaseCallBack(Callback):
+    def __init__(self):
+        super().__init__()
+        self.idx = 0
+        self.num_epochs = 500
+        self.betas = [0.001] + list(np.linspace(0.01, 1, 10))
+
+    def on_train_epoch_end(self, trainer, pl_modelu):
+        pl_modelu.beta = self.betas[self.idx]
+        if trainer.current_epoch % self.num_epochs == 0:
+            if self.idx <= len(self.betas):
+                logger.info(f'Set Beta to {self.betas[self.idx]}')
+                self.idx += 1
 
 class PlottingCallBack(Callback):
     def on_epoch_end(self, trainer, pl_module):
-        if trainer.current_epoch in [i*10 for i in range(10000000)]:
+        if trainer.current_epoch % 100 == 0 or trainer.current_epoch == 0:
             epoch = trainer.current_epoch
             version_str = trainer.log_dir.split('/')[-1]
             with torch.no_grad():
@@ -148,8 +163,8 @@ class PlottingCallBack(Callback):
                 title_text=df_hidden_states.columns[1], row=2, col=i+1)
             fig.update_xaxes(
                 title_text=df_hidden_states.columns[2], row=3, col=i+1)
-            fig.update_xaxes(
-                title_text=df_hidden_states.columns[3], row=4, col=i+1)
+            # fig.update_xaxes(
+            # title_text=df_hidden_states.columns[3], row=4, col=i+1)
 
         # Update xaxis properties
         for j in range(len(df_hidden_states)):
@@ -159,9 +174,8 @@ class PlottingCallBack(Callback):
                 title_text=df_latent_mu.columns[1], row=j+1, col=2)
             fig.update_yaxes(
                 title_text=df_latent_mu.columns[2], row=j+1, col=3)
-            fig.update_yaxes(
-                title_text=df_latent_mu.columns[3], row=j+1, col=4)
-
+            # fig.update_yaxes(
+            # title_text=df_latent_mu.columns[3], row=j+1, col=4)
 
         fig.update_layout(height=1000, width=1600,
                           title_text=f"Latent neuron activations vs. hidden states, epoch: {epoch}",
@@ -193,8 +207,10 @@ class PlottingCallBack(Callback):
         fig.update_layout(barmode='overlay')
         fig.update_layout(title_text=f"Distribution of distribution parameters for z (Gaussian mu and std), epoch: {epoch} ",
                           showlegend=True)
-        fig.update_xaxes(range=[-5, +5], title_text='mu', row=1, col=1)
-        fig.update_xaxes(range=[0, 1.5],title_text='std', row=1, col=2)
+        # fig.update_xaxes(range=[-5, +5], title_text='mu', row=1, col=1)
+        # fig.update_xaxes(range=[0, 1.5],title_text='std', row=1, col=2)
+        fig.update_xaxes(title_text='mu', row=1, col=1)
+        fig.update_xaxes(title_text='std', row=1, col=2)
         for row in (1, 2):
             fig.update_yaxes(title_text='frequency', row=row, col=1)
 
