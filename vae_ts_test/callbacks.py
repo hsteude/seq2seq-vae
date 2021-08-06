@@ -15,19 +15,19 @@ class BetaIncreaseCallBack(Callback):
     def __init__(self):
         super().__init__()
         self.idx = 0
-        self.num_epochs = 500
-        self.betas = [0.001] + list(np.linspace(0.01, 1, 10))
+        self.num_epochs = 100
+        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 1, 10))
 
     def on_train_epoch_end(self, trainer, pl_modelu):
         pl_modelu.beta = self.betas[self.idx]
-        if trainer.current_epoch % self.num_epochs == 0:
+        if trainer.current_epoch % self.num_epochs == 0 and self.idx <= len(self.betas):
             if self.idx <= len(self.betas):
                 logger.info(f'Set Beta to {self.betas[self.idx]}')
                 self.idx += 1
 
 class PlottingCallBack(Callback):
     def on_epoch_end(self, trainer, pl_module):
-        if trainer.current_epoch % 100 == 0 or trainer.current_epoch == 0:
+        if trainer.current_epoch % 5 == 0 or trainer.current_epoch == 0:
             epoch = trainer.current_epoch
             version_str = trainer.log_dir.split('/')[-1]
             with torch.no_grad():
@@ -205,12 +205,14 @@ class PlottingCallBack(Callback):
 
         # Overlay both histograms
         fig.update_layout(barmode='overlay')
-        fig.update_layout(title_text=f"Distribution of distribution parameters for z (Gaussian mu and std), epoch: {epoch} ",
+        fig.update_layout(height=1000, width=1200,
+                          title_text=\
+                          f"Distribution of distribution parameters for z (Gaussian mu and std), epoch: {epoch} ",
                           showlegend=True)
-        # fig.update_xaxes(range=[-5, +5], title_text='mu', row=1, col=1)
-        # fig.update_xaxes(range=[0, 1.5],title_text='std', row=1, col=2)
-        fig.update_xaxes(title_text='mu', row=1, col=1)
-        fig.update_xaxes(title_text='std', row=1, col=2)
+        fig.update_xaxes(range=[-5, +5], title_text='mu', row=1, col=1)
+        fig.update_xaxes(range=[0, 1.5],title_text='std', row=1, col=2)
+        # fig.update_xaxes(title_text='mu', row=1, col=1)
+        # fig.update_xaxes(title_text='std', row=1, col=2)
         for row in (1, 2):
             fig.update_yaxes(title_text='frequency', row=row, col=1)
 

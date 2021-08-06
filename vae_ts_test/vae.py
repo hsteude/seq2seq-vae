@@ -9,7 +9,6 @@ pl.seed_everything(1234)
 class VAE(pl.LightningModule):
     def __init__(self, enc_out_dim=4, learning_rate=1e-3,
                  latent_dim=4, input_size=2,
-                 rnn_layers=5,
                  rnn=True,
                  seq_len=100, beta=10, *args, **kwargs):
         super().__init__()
