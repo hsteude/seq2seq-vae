@@ -20,7 +20,7 @@ HPARAMS = dict(enc_out_dim=100, # needs to be the same as hidden_size
                validdation_split=.1,
                batch_size=1000,
                dl_num_workers=20,
-               beta=.5, # initial value, will be changed through callback during training
+               beta=.1, # initial value, will be changed through callback during training
                learning_rate=1e-2,
                log_every_n_steps=10,
                rnn=True)

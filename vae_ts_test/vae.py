@@ -15,7 +15,7 @@ class VAE(pl.LightningModule):
 
         self.save_hyperparameters()
 
-        # encoder, decoder
+        # fully connecte or rnn decoder and encoder
         if rnn:
             self.encoder = RNNEncoder(**const.HPARAMS)
             self.decoder = RNNDecoder(**const.HPARAMS)
@@ -24,14 +24,17 @@ class VAE(pl.LightningModule):
             self.decoder = LinearDecoder(**const.HPARAMS)
 
 
-        # distribution parameters
+        # map what ever the output dim of the decoder is to latend dim
         self.fc_mu = nn.Linear(enc_out_dim, latent_dim)
         self.fc_var = nn.Linear(enc_out_dim, latent_dim)
 
-        # for the gaussian likelihood
+        # for the gaussian likelihood or the output (data dimation)
+        # here we only need the diagonal of the covariance matrix since
+        # we asume that the latent variables are independet!
         self.log_scale_diag = nn.Parameter(torch.zeros(seq_len*input_size))
 
-        # for beta term of beta-variational autoencoder
+        # Beta term of Beta-Elbo loss
+        # This guy will be modified in a call back during training
         self.beta = beta
         self.learning_rate = learning_rate
 
@@ -49,10 +52,8 @@ class VAE(pl.LightningModule):
         return log_pxz
 
     def kl_divergence(self, z, mu, std):
-        # --------------------------
         # Monte carlo KL divergence
-        # --------------------------
-        # 1. define the first two probabilities (in this case Normal for both)
+        # We asume Gaussians for both prior p(z) and q(z|x)
         p = torch.distributions.Normal(
             torch.zeros_like(mu), torch.ones_like(std))
         q = torch.distributions.Normal(mu, std)

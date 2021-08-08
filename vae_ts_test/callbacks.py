@@ -16,14 +16,15 @@ class BetaIncreaseCallBack(Callback):
         super().__init__()
         self.idx = 0
         self.num_epochs = 100
-        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 1, 10))
+        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 1, 20))
 
     def on_train_epoch_end(self, trainer, pl_modelu):
-        pl_modelu.beta = self.betas[self.idx]
-        if trainer.current_epoch % self.num_epochs == 0 and self.idx <= len(self.betas):
-            if self.idx <= len(self.betas):
-                logger.info(f'Set Beta to {self.betas[self.idx]}')
-                self.idx += 1
+        if self.idx < len(self.betas):
+            pl_modelu.beta = self.betas[self.idx]
+            if trainer.current_epoch % self.num_epochs == 0:
+                if self.idx <= len(self.betas):
+                    logger.info(f'Set Beta to {self.betas[self.idx]}')
+                    self.idx += 1
 
 class PlottingCallBack(Callback):
     def on_epoch_end(self, trainer, pl_module):
