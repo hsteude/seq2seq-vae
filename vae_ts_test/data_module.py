@@ -27,7 +27,7 @@ class RandomCurveDataModule(pl.LightningDataModule):
         len_train = dataset_size - len_val
         self.dataset_train, self.dataset_val = random_split(
             dataset=dataset_full, lengths=[len_train, len_val],
-            generator=torch.Generator())
+            generator=torch.Generator().manual_seed(const.SEED))
 
     def train_dataloader(self):
         return DataLoader(self.dataset_train,

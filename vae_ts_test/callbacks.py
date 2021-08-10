@@ -15,26 +15,31 @@ class BetaIncreaseCallBack(Callback):
     def __init__(self):
         super().__init__()
         self.idx = 0
-        self.num_epochs = 100
-        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 10, 100))
+        self.num_epochs = const.HPARAMS['num_epochs_constant_beta']
+        self.max_beta = const.HPARAMS['beta_max']
+        self.beta_init = const.HPARAMS['beta']
+        self.beta_increase_steps = const.HPARAMS['beta_increase_steps']
+        self.betas = [const.HPARAMS['beta']] + list(
+            np.linspace(self.beta_init, self.max_beta, self.beta_increase_steps))
 
     def on_train_epoch_end(self, trainer, pl_modelu):
         if self.idx < len(self.betas):
-            pl_modelu.beta = self.betas[self.idx]
+            pl_modelu.beta=self.betas[self.idx]
             if trainer.current_epoch % self.num_epochs == 0:
                 if self.idx <= len(self.betas):
-                    logger.info(f'Set Beta to {self.betas[self.idx]}')
                     self.idx += 1
+                    logger.info(f'Set Beta to {self.betas[self.idx]}')
+
 
 class PlottingCallBack(Callback):
     def on_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch % 100 == 0 or trainer.current_epoch == 0:
-            epoch = trainer.current_epoch
-            version_str = trainer.log_dir.split('/')[-1]
+            epoch=trainer.current_epoch
+            version_str=trainer.log_dir.split('/')[-1]
             with torch.no_grad():
-                x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x = self.get_data(
+                x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x=self.get_data(
                     pl_module)
-                data = (x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x)
+                data=(x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x)
                 self.save_scatter_fig(
                     epoch=epoch,
                     version_str=version_str,
@@ -52,34 +57,34 @@ class PlottingCallBack(Callback):
                     pl_module=pl_module,
                     data=data)
 
-    @staticmethod
+    @ staticmethod
     def get_data(pl_module):
-        dataset = SimpleRandomCurvesDataset(
+        dataset=SimpleRandomCurvesDataset(
             const.DATA_PATH, const.HIDDEN_STATE_PATH)
-        batch_size = 100
-        dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=24)
-        batches = iter(dataloader)
-        x_batch, idxs = batches.next()
-        mu_z, std_z, z_sample, mu_x, std_x = pl_module.forward(x_batch.cuda())
+        batch_size=100
+        dataloader=DataLoader(dataset, batch_size=batch_size, num_workers=24)
+        batches=iter(dataloader)
+        x_batch, idxs=batches.next()
+        mu_z, std_z, z_sample, mu_x, std_x=pl_module.forward(x_batch.cuda())
         return x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x
 
-    @staticmethod
+    @ staticmethod
     def save_recon_plot(epoch, version_str, pl_module, data, index):
-        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x = data
-        x = list(range(const.TIMESTEPS))
-        x_sensor_1 = x_batch.detach().numpy()[index, :, 0]
-        x_sensor_2 = x_batch.detach().numpy()[index, :, 1]
-        mu_rec_sensor_1 = mu_x.detach().cpu().numpy()[index, :, 0]
-        mu_rec_sensor_2 = mu_x.detach().cpu().numpy()[index, :, 1]
-        log_scale = pl_module.log_scale_diag.detach().cpu().numpy()
-        std = np.exp(log_scale)
-        std = std.reshape(-1, 2)
-        sensor_1_upper = list(mu_rec_sensor_1 + 2*std[:, 0])
-        sensor_2_upper = list(mu_rec_sensor_2 + 2*std[:, 1])
-        sensor_1_lower = list(mu_rec_sensor_1 - 2*std[:, 0])
-        sensor_2_lower = list(mu_rec_sensor_2 - 2*std[:, 1])
+        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x=data
+        x=list(range(const.TIMESTEPS))
+        x_sensor_1=x_batch.detach().numpy()[index, :, 0]
+        x_sensor_2=x_batch.detach().numpy()[index, :, 1]
+        mu_rec_sensor_1=mu_x.detach().cpu().numpy()[index, :, 0]
+        mu_rec_sensor_2=mu_x.detach().cpu().numpy()[index, :, 1]
+        log_scale=pl_module.log_scale_diag.detach().cpu().numpy()
+        std=np.exp(log_scale)
+        std=std.reshape(-1, 2)
+        sensor_1_upper=list(mu_rec_sensor_1 + 2*std[:, 0])
+        sensor_2_upper=list(mu_rec_sensor_2 + 2*std[:, 1])
+        sensor_1_lower=list(mu_rec_sensor_1 - 2*std[:, 0])
+        sensor_2_lower=list(mu_rec_sensor_2 - 2*std[:, 1])
 
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True)
+        fig=make_subplots(rows=2, cols=1, shared_xaxes=True)
         # signal 1
         for sig, name, colour in zip([x_sensor_1, mu_rec_sensor_1],
                                      ['x_s1', 'p(x_s2|z)'], ['rgb(0,0,100)', 'rgba(192,58,58)']):
@@ -135,16 +140,16 @@ class PlottingCallBack(Callback):
         fig.write_image(
             f'./images/{version_str}/recon_plot_{epoch:05d}.png')
 
-    @staticmethod
+    @ staticmethod
     def save_scatter_fig(epoch, version_str, pl_module, data):
-        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x = data
+        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x=data
 
-        df_hidden_states = pd.read_csv(const.HIDDEN_STATE_PATH)
+        df_hidden_states=pd.read_csv(const.HIDDEN_STATE_PATH)
         df_hidden_states[df_hidden_states.index.isin(idxs.detach().numpy())]
-        df_latent_mu = pd.DataFrame(mu_z.cpu().detach().numpy(),
+        df_latent_mu=pd.DataFrame(mu_z.cpu().detach().numpy(),
                                     columns=[f'mu_{i}' for i in range(const.HPARAMS['latent_dim'])])
 
-        fig = make_subplots(rows=4, cols=4)
+        fig=make_subplots(rows=4, cols=const.HPARAMS['latent_dim'])
 
         for i, hs in enumerate(df_hidden_states.columns):
             for j, hs_pred in enumerate(df_latent_mu.columns):
@@ -164,10 +169,10 @@ class PlottingCallBack(Callback):
             fig.update_xaxes(
                 title_text=df_hidden_states.columns[2], row=3, col=i+1)
             fig.update_xaxes(
-            title_text=df_hidden_states.columns[3], row=4, col=i+1)
+                title_text=df_hidden_states.columns[3], row=4, col=i+1)
 
         # Update xaxis properties
-        for j in range(len(df_hidden_states)):
+        for j in range(len(df_latent_mu.columns)):
             fig.update_yaxes(
                 title_text=df_latent_mu.columns[0], row=j+1, col=1)
             fig.update_yaxes(
@@ -175,7 +180,9 @@ class PlottingCallBack(Callback):
             fig.update_yaxes(
                 title_text=df_latent_mu.columns[2], row=j+1, col=3)
             fig.update_yaxes(
-            title_text=df_latent_mu.columns[3], row=j+1, col=4)
+                title_text=df_latent_mu.columns[3], row=j+1, col=4)
+            fig.update_yaxes(
+                title_text=df_latent_mu.columns[4], row=j+1, col=5)
 
         fig.update_layout(height=1000, width=1600,
                           title_text=f"Latent neuron activations vs. hidden states, epoch: {epoch}",
@@ -187,14 +194,14 @@ class PlottingCallBack(Callback):
         fig.write_image(
             f'./images/{version_str}/scatter_lat_vars_epoch_{epoch:05d}.png')
 
-    @staticmethod
+    @ staticmethod
     def save_z_dist_plot(epoch, version_str, pl_module, data):
-        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x = data
-        df_latent_mu = pd.DataFrame(mu_z.detach().cpu().numpy(),
+        x_batch, idxs, mu_z, std_z, z_sample, mu_x, std_x=data
+        df_latent_mu=pd.DataFrame(mu_z.detach().cpu().numpy(),
                                     columns=[f'mu_{i}' for i in range(const.HPARAMS['latent_dim'])])
-        df_latent_std = pd.DataFrame(std_z.detach().cpu().numpy(), columns=[
+        df_latent_std=pd.DataFrame(std_z.detach().cpu().numpy(), columns=[
                                      f'std_{i}' for i in range(const.HPARAMS['latent_dim'])])
-        fig = make_subplots(rows=1, cols=2)
+        fig=make_subplots(rows=1, cols=2)
         for col in df_latent_mu.columns:
             fig.add_trace(go.Histogram(
                 x=df_latent_mu[col], name=col), row=1, col=1)
@@ -206,11 +213,10 @@ class PlottingCallBack(Callback):
         # Overlay both histograms
         fig.update_layout(barmode='overlay')
         fig.update_layout(height=1000, width=1200,
-                          title_text=\
-                          f"Distribution of distribution parameters for z (Gaussian mu and std), epoch: {epoch} ",
+                          title_text=f"Distribution of distribution parameters for z (Gaussian mu and std), epoch: {epoch} ",
                           showlegend=True)
         fig.update_xaxes(range=[-5, +5], title_text='mu', row=1, col=1)
-        fig.update_xaxes(range=[0, 1.5],title_text='std', row=1, col=2)
+        fig.update_xaxes(range=[0, 1.5], title_text='std', row=1, col=2)
         # fig.update_xaxes(title_text='mu', row=1, col=1)
         # fig.update_xaxes(title_text='std', row=1, col=2)
         for row in (1, 2):
