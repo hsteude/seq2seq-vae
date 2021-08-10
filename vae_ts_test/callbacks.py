@@ -16,7 +16,7 @@ class BetaIncreaseCallBack(Callback):
         super().__init__()
         self.idx = 0
         self.num_epochs = 100
-        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 1, 20))
+        self.betas = [const.HPARAMS['beta']] + list(np.linspace(const.HPARAMS['beta'], 10, 100))
 
     def on_train_epoch_end(self, trainer, pl_modelu):
         if self.idx < len(self.betas):
@@ -28,7 +28,7 @@ class BetaIncreaseCallBack(Callback):
 
 class PlottingCallBack(Callback):
     def on_epoch_end(self, trainer, pl_module):
-        if trainer.current_epoch % 5 == 0 or trainer.current_epoch == 0:
+        if trainer.current_epoch % 100 == 0 or trainer.current_epoch == 0:
             epoch = trainer.current_epoch
             version_str = trainer.log_dir.split('/')[-1]
             with torch.no_grad():
@@ -56,7 +56,6 @@ class PlottingCallBack(Callback):
     def get_data(pl_module):
         dataset = SimpleRandomCurvesDataset(
             const.DATA_PATH, const.HIDDEN_STATE_PATH)
-        dataset.df_data.head()
         batch_size = 100
         dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=24)
         batches = iter(dataloader)
@@ -164,8 +163,8 @@ class PlottingCallBack(Callback):
                 title_text=df_hidden_states.columns[1], row=2, col=i+1)
             fig.update_xaxes(
                 title_text=df_hidden_states.columns[2], row=3, col=i+1)
-            # fig.update_xaxes(
-            # title_text=df_hidden_states.columns[3], row=4, col=i+1)
+            fig.update_xaxes(
+            title_text=df_hidden_states.columns[3], row=4, col=i+1)
 
         # Update xaxis properties
         for j in range(len(df_hidden_states)):
@@ -175,8 +174,8 @@ class PlottingCallBack(Callback):
                 title_text=df_latent_mu.columns[1], row=j+1, col=2)
             fig.update_yaxes(
                 title_text=df_latent_mu.columns[2], row=j+1, col=3)
-            # fig.update_yaxes(
-            # title_text=df_latent_mu.columns[3], row=j+1, col=4)
+            fig.update_yaxes(
+            title_text=df_latent_mu.columns[3], row=j+1, col=4)
 
         fig.update_layout(height=1000, width=1600,
                           title_text=f"Latent neuron activations vs. hidden states, epoch: {epoch}",
