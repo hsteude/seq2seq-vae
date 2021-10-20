@@ -6,7 +6,6 @@ import pytorch_lightning as pl
 
 HPARAMS = dict(
         # datamodule
-        model_selection=['lud_wh'],
         validation_split=.1,
         test_split=.05,
         batch_size=100,
@@ -17,7 +16,7 @@ HPARAMS = dict(
         learning_rate=1e-3,
         latent_dim=5,
         input_size=3,
-        beta=1,
+        beta=0.1,
         enc_out_dim=100,  # needs to be the same as hidden_size
         hidden_size=100,
         rnn_layers=5,

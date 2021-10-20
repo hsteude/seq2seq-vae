@@ -214,7 +214,7 @@ class VAE(pl.LightningModule):
         return elbo, log_dict
 
     def training_step(self, batch, batch_idx):
-        x, _ = batch
+        x, _, _ = batch
         train_elbo, train_log_dict = self._shared_eval(x)
         self.logger.experiment.add_scalars("loss", dict(
             elbo_train=train_log_dict['elbo'],
@@ -226,8 +226,7 @@ class VAE(pl.LightningModule):
         return train_elbo
 
     def validation_step(self, batch, batch_idx):
-        breakpoint()
-        x, _ = batch
+        x, _, _ = batch
         self._shared_eval(x)
         val_elbo, val_log_dict = self._shared_eval(x)
         self.logger.experiment.add_scalars("loss", dict(

@@ -20,7 +20,8 @@ class ThreeTankDataSet(Dataset):
         self.x = x / const.SCALING_CONST
         self.start_idx_list = [i*const.NUMBER_TIMESTEPS for i in range(const.NUMBER_OF_SAMPLES)]
         self.end_idx_list = [i + const.NUMBER_TIMESTEPS for i in self.start_idx_list]
-        breakpoint()
+        self.labels = self.df[const.LABEL_COLS].values.astype(np.float32)
+
 
 
     def __len__(self):
@@ -30,11 +31,12 @@ class ThreeTankDataSet(Dataset):
 
     def __getitem__(self, index):
         """Get one sample"""
-        return self.x[self.start_idx_list[index]: self.end_idx_list[index], :], index 
+        labels_out = self.labels[self.start_idx_list[index], :]
+        return self.x[self.start_idx_list[index]: self.end_idx_list[index], :], labels_out,  index 
 
 if __name__ == '__main__':
     # test for lets have a look
-    dataset = ThreeTankBaseDataSet()
+    dataset = ThreeTankDataSet()
     idx = 10
     x, idx = dataset[idx]
     breakpoint()
