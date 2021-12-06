@@ -40,8 +40,8 @@ class ThreeTankDataGenerator():
         kv23_samples = np.array(np.random.uniform(low=const.KV23_MIN, high=const.KV23_MAX, size=N))
         return q1_samples, q3_samples, kv12_samples, kv23_samples 
 
-    def solve_ode(self, initial_state, q1, q2, kv12, kv23):
-        return odeint(self.system_dynamics_function, initial_state, self.t, (q2, q2, kv12, kv23))
+    def solve_ode(self, initial_state, q1, q3, kv12, kv23):
+        return odeint(self.system_dynamics_function, initial_state, self.t, (q1, q3, kv12, kv23))
 
 
     def generate(self):
